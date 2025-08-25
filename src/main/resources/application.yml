@@ -1,7 +1,12 @@
 spring:
   application:
     name: lgy-ai-code
-
+  # mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/lgy_ai_code
+    username: root
+    password: gy123456
 server:
   port: 9527
   servlet:
@@ -18,3 +23,4 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
