@@ -13,6 +13,7 @@ import com.lgy.exception.ThrowUtils;
 import com.lgy.model.dto.app.AppAddRequest;
 import com.lgy.model.dto.app.AppQueryRequest;
 import com.lgy.model.entity.User;
+import com.lgy.model.enums.ChatHistoryMessageTypeEnum;
 import com.lgy.model.enums.CodeGenTypeEnum;
 import com.lgy.model.vo.AppVO;
 import com.lgy.model.vo.UserVO;
@@ -24,7 +25,9 @@ import com.lgy.mapper.AppMapper;
 import com.lgy.service.AppService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.View;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
@@ -49,6 +52,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
 
+    @Resource
+    private ChatHistoryServiceImpl chatHistoryService;
+    @Autowired
+    private View error;
 
 
     @Override
@@ -69,24 +76,19 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用代码生成类型错误");
         }
-//        // 5. 在调用 AI 前，先保存用户消息到数据库中
-//        chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
-//        // 6. 设置监控上下文（用户 ID 和应用 ID）
-//        MonitorContextHolder.setContext(
-//                MonitorContext.builder()
-//                        .userId(loginUser.getId().toString())
-//                        .appId(appId.toString())
-//                        .build()
-//        );
+        // 5. 在调用 AI 前，先保存用户消息到数据库中
+        chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
         // 7. 调用 AI 生成代码（流式）
         Flux<String> codeStream = aiCodeGeneratorFacade.generateStreamAndSaveCode(message, codeGenTypeEnum, appId);
-        // 8. 收集 AI 响应的内容，并且在完成后保存记录到对话历史
-//        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum)
-//                .doFinally(signalType -> {
-//                    // 流结束时清理（无论成功/失败/取消）
-//                    MonitorContextHolder.clearContext();
-//                });
-        return  codeStream;
+        StringBuilder codeBuilder = new StringBuilder();
+        return   codeStream.map(chuck -> {
+            codeBuilder.append(chuck);
+            return chuck;
+        }).doOnComplete(()->{
+            chatHistoryService.addChatMessage(appId, codeBuilder.toString(), ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+        }).doOnError(error->{
+            chatHistoryService.addChatMessage(appId, "AI回复失败: " + error.getMessage(), ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+        });
     }
 
     @Override
@@ -100,6 +102,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         app.setUserId(loginUser.getId());
         // 应用名称暂时为 initPrompt 前 12 位
         app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        app.setCodeGenType("multi_file");
         // 使用 AI 智能选择代码生成类型（多例模式）
 //        AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
 //        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
@@ -126,11 +129,11 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
             return false;
         }
         // 先删除关联的对话历史
-//        try {
-//            chatHistoryService.deleteByAppId(appId);
-//        } catch (Exception e) {
-//            log.error("删除应用关联的对话历史失败：{}", e.getMessage());
-//        }
+        try {
+            chatHistoryService.deleteByAppId(appId);
+        } catch (Exception e) {
+            log.error("删除应用关联的对话历史失败：{}", e.getMessage());
+        }
         // 删除应用
         return super.removeById(id);
     }
