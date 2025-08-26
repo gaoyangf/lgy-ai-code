@@ -15,10 +15,16 @@ spring:
       password:
       ttl: 3600
       database: 0
+  session:
+    store-type: redis
+    timeout: 1800
 server:
   port: 9527
   servlet:
     context-path: /api #?????
+    session:
+      cookie:
+        max-age: 1800
 
 # springdoc-openapi????
 springdoc:
