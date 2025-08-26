@@ -2,7 +2,10 @@ package com.lgy.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import com.lgy.constant.AppConstant;
 import com.lgy.core.AiCodeGeneratorFacade;
 import com.lgy.exception.BusinessException;
 import com.lgy.exception.ErrorCode;
@@ -24,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +53,40 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
     @Override
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
-        return null;
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 错误");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "提示词不能为空");
+        // 2. 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 3. 权限校验，仅本人可以和自己的应用对话
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限访问该应用");
+        }
+        // 4. 获取应用的代码生成类型
+        String codeGenType = app.getCodeGenType();
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
+        if (codeGenTypeEnum == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用代码生成类型错误");
+        }
+//        // 5. 在调用 AI 前，先保存用户消息到数据库中
+//        chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
+//        // 6. 设置监控上下文（用户 ID 和应用 ID）
+//        MonitorContextHolder.setContext(
+//                MonitorContext.builder()
+//                        .userId(loginUser.getId().toString())
+//                        .appId(appId.toString())
+//                        .build()
+//        );
+        // 7. 调用 AI 生成代码（流式）
+        Flux<String> codeStream = aiCodeGeneratorFacade.generateStreamAndSaveCode(message, codeGenTypeEnum, appId);
+        // 8. 收集 AI 响应的内容，并且在完成后保存记录到对话历史
+//        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum)
+//                .doFinally(signalType -> {
+//                    // 流结束时清理（无论成功/失败/取消）
+//                    MonitorContextHolder.clearContext();
+//                });
+        return  codeStream;
     }
 
     @Override
@@ -99,7 +136,49 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
     }
     @Override
     public String deployApp(Long appId, User loginUser) {
-        return "";
+        // 1.参数校验
+        if(appId == null ){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        }
+        // 2.获取应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 3.权限校验
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无操作权限");
+        }
+        // 4.检查是否已经部署
+          //如果没有 就生成6位deployKey
+        String deployKey = app.getDeployKey();
+        if (StrUtil.isBlank(deployKey)) {
+            deployKey = RandomUtil.randomString(6);
+            app.setDeployKey(deployKey);
+            this.updateById(app);
+        }
+        // 5.获取代码生成类型，获取原始代码生成路径(应用访目录)
+        String codeGenType = app.getCodeGenType();
+        String sourceDirName = codeGenType + "_"+ appId;
+        String sourceDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceDirName;
+        // 6.检查路径是否存在
+        File sourceDir = new File(sourceDirPath);
+        if(!sourceDir.exists() || !sourceDir.isDirectory()){
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "原始代码生成目录不存在");
+        }
+        // 7.复制文件到部署目录
+        String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
+        try {
+            FileUtil.copyContent(sourceDir,new File(deployDirPath),true );
+        }catch (Exception e){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "复制文件失败");
+        }
+        // 8.更新数据库
+        App updateApp = new App();
+        updateApp.setId(appId);
+        updateApp.setDeployKey(deployKey);
+        boolean updateResult = this.updateById(updateApp);
+        ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR,"更新应用部署失败");
+        // 9.返回可访问的url
+        return String.format("%s/%s", AppConstant.CODE_DEPLOY_HOST, deployKey);
     }
 
     @Override
