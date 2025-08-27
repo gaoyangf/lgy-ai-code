@@ -55,3 +55,9 @@ langchain4j:
       log-requests: true
       log-responses: true
       model-name: deepseek-chat
+    reasoning-streaming-chat-model:
+      base-url: https://api.deepseek.com
+      api-key: sk-ad0f12d1bd08428995c1b359f52b3ec6
+      log-requests: true
+      log-responses: true
+      model-name: deepseek-chat
