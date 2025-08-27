@@ -3,6 +3,7 @@ package com.lgy.ai;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.lgy.ai.tools.FileWriteTool;
+import com.lgy.ai.tools.ToolManager;
 import com.lgy.exception.BusinessException;
 import com.lgy.exception.ErrorCode;
 import com.lgy.model.enums.CodeGenTypeEnum;
@@ -15,8 +16,6 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import java.time.Duration;
@@ -37,6 +36,8 @@ public class AiCodeGeneratorServiceFactory {
     @Resource
     private ChatHistoryServiceImpl chatHistoryService;
 
+    @Resource
+    private ToolManager toolManager;
     /**
      * AI 服务实例缓存
      * 缓存策略：
@@ -105,7 +106,7 @@ public class AiCodeGeneratorServiceFactory {
                         .chatModel(chatModel)
                         .streamingChatModel(reasoningStreamingChatModel)
                         .chatMemoryProvider(memoryId -> chatMemory)
-                        .tools(new FileWriteTool())
+                        .tools(toolManager.getAllTools())
                         // 处理工具调用幻觉问题
                         .hallucinatedToolNameStrategy(toolExecutionRequest ->
                                         ToolExecutionResultMessage.from(toolExecutionRequest,
