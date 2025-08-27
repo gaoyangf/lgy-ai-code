@@ -1,14 +1,22 @@
 package com.lgy.core;
 
+import cn.hutool.json.JSONUtil;
 import com.lgy.ai.AiCodeGeneratorService;
 import com.lgy.ai.AiCodeGeneratorServiceFactory;
 import com.lgy.ai.model.HtmlCodeResult;
 import com.lgy.ai.model.MultiFileCodeResult;
+import com.lgy.ai.model.message.AiResponseMessage;
+import com.lgy.ai.model.message.ToolExecutedMessage;
+import com.lgy.ai.model.message.ToolRequestMessage;
+import com.lgy.constant.AppConstant;
 import com.lgy.core.parser.CodeParserExecutor;
 import com.lgy.core.saver.CodeFileSaverExecutor;
 import com.lgy.exception.BusinessException;
 import com.lgy.exception.ErrorCode;
 import com.lgy.model.enums.CodeGenTypeEnum;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.tool.ToolExecution;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -71,8 +79,8 @@ public class AiCodeGeneratorFacade {
         AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, codeGenTypeEnum);
         return switch (codeGenTypeEnum) {
             case VUE_PROJECT -> {
-                Flux<String> codeStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                yield  processFileCodeStream(codeStream, codeGenTypeEnum,appId);
+                TokenStream codeStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
+                yield  processTokenStream(codeStream,appId);
             }
             case HTML -> {
                 Flux<String> codeStream = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
@@ -88,7 +96,40 @@ public class AiCodeGeneratorFacade {
             }
         };
     }
-
+    /**
+     * 将 TokenStream 转换为 Flux<String>，并传递工具调用信息
+     *
+     * @param tokenStream TokenStream 对象
+     * @param appId       应用 ID
+     * @return Flux<String> 流式响应
+     */
+    private Flux<String> processTokenStream(TokenStream tokenStream, Long appId) {
+        return Flux.create(sink -> {
+            tokenStream.onPartialResponse((String partialResponse) -> {
+                        AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
+                        sink.next(JSONUtil.toJsonStr(aiResponseMessage));
+                    })
+                    .onPartialToolExecutionRequest((index, toolExecutionRequest) -> {
+                        ToolRequestMessage toolRequestMessage = new ToolRequestMessage(toolExecutionRequest);
+                        sink.next(JSONUtil.toJsonStr(toolRequestMessage));
+                    })
+                    .onToolExecuted((ToolExecution toolExecution) -> {
+                        ToolExecutedMessage toolExecutedMessage = new ToolExecutedMessage(toolExecution);
+                        sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
+                    })
+                    .onCompleteResponse((ChatResponse response) -> {
+                        // 执行 Vue 项目构建（同步执行，确保预览时项目已就绪）
+                        String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
+//                        vueProjectBuilder.buildProject(projectPath);
+                        sink.complete();
+                    })
+                    .onError((Throwable error) -> {
+                        error.printStackTrace();
+                        sink.error(error);
+                    })
+                    .start();
+        });
+    }
 
     /**
      * 统一解析保存入口

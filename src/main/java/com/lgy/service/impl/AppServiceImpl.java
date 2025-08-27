@@ -7,6 +7,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.lgy.constant.AppConstant;
 import com.lgy.core.AiCodeGeneratorFacade;
+import com.lgy.core.handler.StreamHandlerExecutor;
 import com.lgy.exception.BusinessException;
 import com.lgy.exception.ErrorCode;
 import com.lgy.exception.ThrowUtils;
@@ -54,9 +55,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
     @Resource
     private ChatHistoryServiceImpl chatHistoryService;
-    @Autowired
-    private View error;
 
+    @Resource
+    private StreamHandlerExecutor streamHandlerExecutor;
 
     @Override
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
@@ -80,15 +81,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
         // 7. 调用 AI 生成代码（流式）
         Flux<String> codeStream = aiCodeGeneratorFacade.generateStreamAndSaveCode(message, codeGenTypeEnum, appId);
-        StringBuilder codeBuilder = new StringBuilder();
-        return   codeStream.map(chuck -> {
-            codeBuilder.append(chuck);
-            return chuck;
-        }).doOnComplete(()->{
-            chatHistoryService.addChatMessage(appId, codeBuilder.toString(), ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
-        }).doOnError(error->{
-            chatHistoryService.addChatMessage(appId, "AI回复失败: " + error.getMessage(), ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
-        });
+        // 收集 AI 响应的内容，并且在完成后保存记录到对话历史
+        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
     }
 
     @Override
@@ -102,7 +96,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         app.setUserId(loginUser.getId());
         // 应用名称暂时为 initPrompt 前 12 位
         app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
-        app.setCodeGenType("multi_file");
+        app.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue());
         // 使用 AI 智能选择代码生成类型（多例模式）
 //        AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
 //        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
