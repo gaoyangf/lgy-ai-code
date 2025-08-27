@@ -1,5 +1,7 @@
 package com.lgy.constant;
 
+import java.io.File;
+
 /**
  * 应用常量
  */
@@ -18,7 +20,7 @@ public interface AppConstant {
     /**
      * 应用生成目录
      */
-    String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
+    String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") + File.separator +  "tmp" +  File.separator +"code_output";
 
     /**
      * 应用部署目录
