@@ -2,7 +2,6 @@ package com.lgy.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.lgy.ai.tools.FileWriteTool;
 import com.lgy.ai.tools.ToolManager;
 import com.lgy.exception.BusinessException;
 import com.lgy.exception.ErrorCode;
@@ -27,7 +26,8 @@ import java.time.Duration;
 @Slf4j
 public class AiCodeGeneratorServiceFactory {
 
-    @Resource
+
+    @Resource(name = "openAiChatModel")
     private ChatModel chatModel;
 
     @Resource

@@ -63,7 +63,9 @@ langchain4j:
       api-key: sk-ad0f12d1bd08428995c1b359f52b3ec6
       log-requests: true
       log-responses: true
-      model-name: deepseek-chat
+      model-name: deepseek-reasoner
+      temperature: 0.1
+      max-tokens: 32768
 
 cos:
   client:
