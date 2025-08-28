@@ -15,6 +15,8 @@ import com.lgy.exception.ThrowUtils;
 import com.lgy.model.dto.app.*;
 import com.lgy.model.entity.User;
 import com.lgy.model.vo.AppVO;
+import com.lgy.ratelimter.annotation.RateLimit;
+import com.lgy.ratelimter.enums.RateLimitType;
 import com.lgy.service.ProjectDownloadService;
 import com.lgy.service.UserService;
 import com.mybatisflex.core.paginate.Page;
@@ -80,7 +82,7 @@ public class AppController {
 
 
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-//    @RateLimit(limitType = RateLimitType.USER, rate = 5, rateInterval = 60, message = "AI 对话请求过于频繁，请稍后再试")
+    @RateLimit(limitType = RateLimitType.USER, rate = 5, rateInterval = 60, message = "AI 对话请求过于频繁，请稍后再试")
     public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
                                                        @RequestParam String message,
                                                        HttpServletRequest request) {
