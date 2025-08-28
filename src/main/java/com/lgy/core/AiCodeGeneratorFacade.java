@@ -9,6 +9,7 @@ import com.lgy.ai.model.message.AiResponseMessage;
 import com.lgy.ai.model.message.ToolExecutedMessage;
 import com.lgy.ai.model.message.ToolRequestMessage;
 import com.lgy.constant.AppConstant;
+import com.lgy.core.builder.VueProjectBuilder;
 import com.lgy.core.parser.CodeParserExecutor;
 import com.lgy.core.saver.CodeFileSaverExecutor;
 import com.lgy.exception.BusinessException;
@@ -34,6 +35,9 @@ public class AiCodeGeneratorFacade {
 
     @Resource
     private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
+
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
     /**
      * 统一入口：根据类型生成并保存代码
      *
@@ -120,7 +124,7 @@ public class AiCodeGeneratorFacade {
                     .onCompleteResponse((ChatResponse response) -> {
                         // 执行 Vue 项目构建（同步执行，确保预览时项目已就绪）
                         String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
-//                        vueProjectBuilder.buildProject(projectPath);
+                        vueProjectBuilder.buildProject(projectPath);
                         sink.complete();
                     })
                     .onError((Throwable error) -> {

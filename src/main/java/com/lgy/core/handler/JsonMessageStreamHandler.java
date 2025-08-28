@@ -7,8 +7,6 @@ import cn.hutool.json.JSONUtil;
 import com.lgy.ai.model.message.*;
 import com.lgy.ai.tools.BaseTool;
 import com.lgy.ai.tools.ToolManager;
-import com.lgy.constant.AppConstant;
-import com.lgy.core.builder.VueProjectBuilder;
 import com.lgy.model.entity.User;
 import com.lgy.model.enums.ChatHistoryMessageTypeEnum;
 import com.lgy.service.ChatHistoryService;
@@ -17,8 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,8 +30,6 @@ public class JsonMessageStreamHandler {
     @Resource
     private ToolManager toolManager;
 
-    @Resource
-    private VueProjectBuilder vueProjectBuilder;
 
     /**
      * 处理 TokenStream（VUE_PROJECT）
@@ -63,9 +58,7 @@ public class JsonMessageStreamHandler {
                     // 流式响应完成后，添加 AI 消息到对话历史
                     String aiResponse = chatHistoryStringBuilder.toString();
                     chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
-                    //
-                    Path projectPath = Paths.get(AppConstant.CODE_OUTPUT_ROOT_DIR, "vue_project_" + appId);
-                    vueProjectBuilder.buildProjectAsync(projectPath.toString());
+
                 })
                 .doOnError(error -> {
                     // 如果AI回复失败，也要记录错误消息
