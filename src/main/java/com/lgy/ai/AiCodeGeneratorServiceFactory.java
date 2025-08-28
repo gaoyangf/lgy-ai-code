@@ -2,6 +2,7 @@ package com.lgy.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.lgy.ai.guardrail.PromptSafetyInputGuardrail;
 import com.lgy.ai.tools.ToolManager;
 import com.lgy.exception.BusinessException;
 import com.lgy.exception.ErrorCode;
@@ -98,6 +99,7 @@ public class AiCodeGeneratorServiceFactory {
                         .chatModel(chatModel)
                         .streamingChatModel(openAiStreamingChatModel)
                         .chatMemory(chatMemory)
+                        .inputGuardrails(new PromptSafetyInputGuardrail()) // 添加输入护轨
                         .build();
             }
             case VUE_PROJECT -> {
@@ -107,6 +109,7 @@ public class AiCodeGeneratorServiceFactory {
                         .streamingChatModel(reasoningStreamingChatModel)
                         .chatMemoryProvider(memoryId -> chatMemory)
                         .tools(toolManager.getAllTools())
+                        .inputGuardrails(new PromptSafetyInputGuardrail()) // 添加输入护轨
                         // 处理工具调用幻觉问题
                         .hallucinatedToolNameStrategy(toolExecutionRequest ->
                                         ToolExecutionResultMessage.from(toolExecutionRequest,
