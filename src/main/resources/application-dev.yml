@@ -65,10 +65,3 @@ langchain4j:
       temperature: 0.1
       max-tokens: 32768
 
-cos:
-  client:
-      host: https://lgy-ai-code-1313505823.cos.ap-beijing.myqcloud.com
-      secretId: AKIDEIBxXu65yiHgttgIiuuhJj2A4lGYcXFn
-      secretKey: Ro4JOSVP6aswnRs66sSpMwJUUIvLenjS
-      region: ap-beijing
-      bucket: lgy-ai-code-1313505823
