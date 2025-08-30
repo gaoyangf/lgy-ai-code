@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  app:
+    image: lgy-ai-code:latest
+    container_name: lgy-ai-code
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9527:9527"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
