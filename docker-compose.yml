@@ -9,17 +9,16 @@ services:
       dockerfile: Dockerfile
     ports:
       - "9527:9527"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - SERVER_PORT=9527
-      # 修改为您的服务器实际 MySQL 地址
-      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/lgy_ai_code?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=gy123456
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
     restart: unless-stopped
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
 
 volumes:
   mysql_data:
