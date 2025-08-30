@@ -11,9 +11,6 @@ services:
       - "9527:9527"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-    depends_on:
-      mysql:
-        condition: service_healthy
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data

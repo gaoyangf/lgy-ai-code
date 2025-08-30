@@ -2,7 +2,7 @@ spring:
   application:
     name: lgy-ai-code
   profiles:
-    active: dev
+    active: prod
 
 cos:
   client:
