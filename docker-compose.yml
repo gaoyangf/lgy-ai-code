@@ -17,11 +17,11 @@ services:
       - backend
       # 新增环境变量，覆盖应用配置
     environment:
+      - #  数据库连接（连接宿主机）
       - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/lgy_ai_code?useUnicode=true&characterEncoding=utf-8&useSSL=false
-      - SPRING_REDIS_HOST=host.docker.internal
-      - SPRING_REDIS_PORT=6379
-      - SPRING_REDIS_PASSWORD=gy123456
-      - SPRING_REDIS_DATABASE=0
+      # Redis 连接（连接宿主机）
+      - SPRING_DATA_REDIS_HOST=host.docker.internal
+      - SPRING_DATA_REDIS_PORT=6379
     # 可选：同时添加主机映射，让 host.docker.internal 也能工作
     extra_hosts:
       - "host.docker.internal:172.17.0.1"
