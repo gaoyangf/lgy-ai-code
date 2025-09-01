@@ -12,6 +12,8 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
+      - /root/front/ai-code/tmp/code_output:/app/tmp/code_output
+      - /root/front/ai-code/tmp/code_deploy:/app/tmp/code_deploy
     restart: unless-stopped
     networks:
       - backend
