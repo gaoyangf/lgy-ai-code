@@ -23,11 +23,3 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
-
-cos:
-  client:
-    host: https://lgy-ai-code-1313505823.cos.ap-beijing.myqcloud.com
-    secretId: AKIDEIBxXu65yiHgttgIiuuhJj2A4lGYcXFn
-    secretKey: Ro4JOSVP6aswnRs66sSpMwJUUIvLenjS
-    region: ap-beijing
-    bucket: lgy-ai-code-1313505823
