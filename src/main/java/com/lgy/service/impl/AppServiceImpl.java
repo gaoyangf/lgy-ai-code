@@ -174,8 +174,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         }
         // 5.获取代码生成类型，获取原始代码生成路径(应用访目录)
         String codeGenType = app.getCodeGenType();
-        String sourceDirName = codeGenType + "_"+ appId;
-        String sourceDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceDirName;
+        String sourceDirName =StrUtil.format("{}_{}", codeGenType, appId);
+        String sourceDirPath =StrUtil.format("{}{}{}", AppConstant.CODE_OUTPUT_ROOT_DIR,File.separator,sourceDirName);
         // 6.检查路径是否存在
         File sourceDir = new File(sourceDirPath);
         if(!sourceDir.exists() || !sourceDir.isDirectory()){
@@ -194,7 +194,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
             sourceDir = distDir;
         }
         // 7.复制文件到部署目录
-        String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
+        String deployDirPath = StrUtil.format("{}{}{}", AppConstant.CODE_DEPLOY_ROOT_DIR,File.separator,deployKey);
         try {
             FileUtil.copyContent(sourceDir,new File(deployDirPath),true );
         }catch (Exception e){

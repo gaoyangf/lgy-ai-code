@@ -16,25 +16,8 @@ spring:
   session:
     store-type: redis
     timeout: 1800
-server:
-  port: 9527
-  servlet:
-    context-path: /api #?????
-    session:
-      cookie:
-        max-age: 1800
 
-# springdoc-openapi????
-springdoc:
-  group-configs:
-    - group: 'default'
-      paths-to-match: '/**'
-      packages-to-scan: com.lgy.controller
-# knife4j???????????????
-knife4j:
-  enable: true
-  setting:
-    language: zh_cn
+
 
 langchain4j:
   open-ai:

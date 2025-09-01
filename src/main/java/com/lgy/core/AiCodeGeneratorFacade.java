@@ -1,5 +1,6 @@
 package com.lgy.core;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.lgy.ai.AiCodeGeneratorService;
 import com.lgy.ai.AiCodeGeneratorServiceFactory;
@@ -123,7 +124,7 @@ public class AiCodeGeneratorFacade {
                     })
                     .onCompleteResponse((ChatResponse response) -> {
                         // 执行 Vue 项目构建（同步执行，确保预览时项目已就绪）
-                        String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
+                        String projectPath = StrUtil.format("{}{}{}{}", AppConstant.CODE_OUTPUT_ROOT_DIR,"/vue_project_", File.separator,appId);
                         vueProjectBuilder.buildProject(projectPath);
                         sink.complete();
                     })

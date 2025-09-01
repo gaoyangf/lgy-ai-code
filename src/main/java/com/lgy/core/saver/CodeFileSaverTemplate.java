@@ -1,7 +1,6 @@
 package com.lgy.core.saver;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.lgy.constant.AppConstant;
 import com.lgy.exception.BusinessException;
@@ -76,7 +75,7 @@ public abstract class CodeFileSaverTemplate<T> {
         }
         String codeType = getCodeType().getValue();
         String uniqueDirName = StrUtil.format("{}_{}", codeType, appId);
-        String dirPath = FILE_SAVE_ROOT_DIR + File.separator + uniqueDirName;
+        String dirPath =  StrUtil.format("{}{}{}", FILE_SAVE_ROOT_DIR, File.separator, uniqueDirName);
         FileUtil.mkdir(dirPath);
         return dirPath;
     }
