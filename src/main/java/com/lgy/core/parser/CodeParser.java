@@ -3,7 +3,7 @@ package com.lgy.core.parser;
 /**
  * 代码解析器策略接口
  * 
- * @author yupi
+ * @author gy
  */
 public interface CodeParser<T> {
 
